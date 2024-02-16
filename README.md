@@ -8,7 +8,7 @@ changes and push them.
 - Use git-bash to clone your copy of the repository
 
 ```bash
-git clone [the-url-you-copied-not]
+git clone [the-url-you-copied]
 ```
 - Now open the cloned directory in PyCharm
 - To ensure we are working in an environment that is not using global python packages, and we can install what we want, 
@@ -43,7 +43,7 @@ pip install flask-mqtt
 ```
 
 - You need to edit the app.config values
-- Ensure you are using credentials that can both publish and subscribe
+- Ensure you are using credentials that can both publish and subscribe (This is configured in HiveMQ)
 
 ```python
 app.config['MQTT_BROKER_URL'] = "[ENTER-HIVEMQ-URL-HERE]"  # URL for HiveMQ cluster
@@ -56,3 +56,54 @@ app.config['MQTT_CLIENT_ID'] = "[SOME-UNIQUE-CLIENT-ID]"  # Must be unique for a
 - We can subscribe to topics and define a callback that fires when a message is received on a subscribed topic
 - This example also publishes to the same topic which we can trigger by going to [http://localhost:5000/publish](http://localhost:5000/publish)
 - We should then be able to see the message in the flask server console
+
+## The Code in Detail
+
+- We instantiate the Flask app as normal
+
+```python
+app = Flask(__name__)
+```
+
+- The instance of the Flask app has a config dictionary that we can pass configuration attributes to that are required by flask-mqtt
+- Once the Flask app instance has this configuration, we pass the instance to a constructor of the Mqtt client class imported from flask-mqtt
+
+```python
+mqtt = Mqtt(app)
+```
+
+- As with the flask library, there are lots of things that happen that we don't see (such as the case with any library, we don't want to see them, we just want them to work!)
+- Flask wants us to declare route handlers using '@app.route('/some-route')', we don't see the code that listens for and processes requests to these routes, we just need to write them.
+- It's the same with flask-mqtt, we can define some handler functions for some expected events such as when the client has connected and when it receives messages to subscribed topics.
+- We define a callback handler to do something when we know that the client has connected, that something is printing the connection result and subscribing to a topic
+
+> Note: Connected with result '5' means something has gone wrong, probably incorrect configuration.
+> The MQTT Client will continue to attempt to connect in this case and the Flask app will not start.
+
+```python
+@mqtt.on_connect()
+def handle_connect(client, userdata, flags, rc):
+    print("Connected with result code " + str(rc))
+    mqtt.subscribe("home/test")
+```
+
+- We also define a callback handler to do something when a message is received on a subscribed topic. Here that something is simply printing out the message payload to the Flask console.
+
+```python
+@mqtt.on_message()
+def handle_mqtt_message(client, userdata, message):
+    print(str(message.payload))
+```
+
+- We can test the subscription from within Flask by publishing to the same topic
+- We do this by writing a simple route on '/publish' that triggers publishing a message on the same topic we subscribed to
+- The string that is returned is a reminder to check the Flask console for the message
+
+```python
+@app.route('/publish')
+def publish_test():
+    mqtt.publish('home/test', b'hello???')
+    return 'Did it work? (Check your flask console)'
+```
+
+>Note: We can't send a response that verifies that the subscription worked. Why not?

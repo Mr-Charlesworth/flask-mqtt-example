@@ -31,8 +31,6 @@ def handle_connect(client, userdata, flags, rc):
 @mqtt.on_message()
 def handle_mqtt_message(client, userdata, message):
     print(str(message.payload))
-    print(client)
-    print(userdata)
 
 
 # A simple route to fire off publishing a message (we use this to test if it is working)
