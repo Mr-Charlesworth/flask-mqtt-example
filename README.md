@@ -107,3 +107,14 @@ def publish_test():
 ```
 
 >Note: We can't send a response that verifies that the subscription worked. Why not?
+
+## Exercises
+
+1. Create a page in your flask app with a button. Make it so that when the button is pressed it toggles an LED on your pico. Hint: Your pico needs to subscribe to a topic that your flask app publishes to. Another hint: You need to use the same HiveMQ cluster.
+2. Create another page in your flask app that shows the status of the LED (on or off). Hint: Make your pico publish to a topic every time it is toggled and subscribe to the same topic in your flask app. Your flask app needs a state to hold the status (i.e. a variable).
+
+## Harder exercise
+
+Take a message as input from a form in your flask app and display it on the LCD display on the pico
+
+
